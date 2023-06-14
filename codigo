@@ -1,0 +1,78 @@
+; multi-segment executable file template.
+
+data segment
+    ; add your data here!
+    prompt db "Ingrese un numero: $"
+    result_message db "Este es el resultado: ", '$'
+    enter db 10,13,'$'
+ends
+
+stack segment
+    dw   128  dup(0)
+ends
+
+code segment
+start:
+; set segment registers:
+    mov ax, data
+    mov ds, ax
+    mov es, ax
+
+    mov ah, 9                  ; Mostrar el mensaje de solicitud
+    mov dx, offset prompt
+    int 21h
+
+    ; Leer un numero desde la entrada estandar
+    mov ah, 1                  ; Leer un carácter desde el teclado
+    int 21h
+    sub al, '0'                ; Convertir el caracter en un numero
+    mov bl, al                 ; Almacenar el numero en BL
+
+    ; Realizar operaciones en la CPU emulada
+    add bl, 8                  ; Sumar 8 a BL
+    
+    mov ah, 9                  ; Mostrar el mensaje
+    mov dx, offset enter
+    int 21h
+    ; Mostrar el mensaje "Este es el resultado: "
+    mov ah, 9                  ; Mostrar el mensaje
+    mov dx, offset result_message
+    int 21h
+
+    mov ax,bx                  ; Colocar el resultado en AX  
+    call imprime               ; Mostrar el numero resultado
+    call return                ; Llamar a la funcion para imprimir
+
+    mov ax, 4C00h              ; Finalizar programa
+    int 21h
+    
+    imprime:                   ;Funcion para imprimir
+        mov bx,10
+        mov cx,0
+    reducir:
+        mov dx,0
+        div bx
+        push dx
+        inc cx
+        cmp ax,0
+        jz mostrar
+        jmp reducir 
+    mostrar:
+        pop dx
+        add dl, 48
+        mov ah,2
+        int 21h
+        loop mostrar  
+        lea dx, enter
+        mov ah, 9
+        int 21h      
+        ret       
+    
+    return:
+        lea dx, enter
+        mov ah, 9
+        int 21h    
+        ret        
+ends
+
+end start ; set entry point and stop the assembler.
